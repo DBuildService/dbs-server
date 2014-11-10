@@ -4,3 +4,4 @@ data/db.sqlite3
 dbs-*.tar.gz
 *.swp
 secret_key
+.idea
