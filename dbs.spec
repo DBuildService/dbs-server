@@ -3,7 +3,7 @@
 %global  httpd_confdir  %{_sysconfdir}/httpd/conf.d
 
 Name:           dbs
-Version:        0.1
+Version:        0.2
 Release:        1%{?dist}
 
 Summary:        Docker Build Service
@@ -206,6 +206,19 @@ usermod -a -G docker dbs || :
 
 
 %changelog
+* Mon Nov 10 2014 Tomas Tomecek <ttomecek@redhat.com> 0.2-1
+- Better task list (thrcka@redhat.com)
+- Enable task list (thrcka@drone-x240.localdomain)
+- api,build: store list of rpms in DB (ttomecek@redhat.com)
+- implement new api system (ttomecek@redhat.com)
+- api: implement invalidation (ttomecek@redhat.com)
+- api: implement move image, store data in DB (ttomecek@redhat.com)
+- implement rebuild (ttomecek@redhat.com)
+- import all models the same way (jdornak@redhat.com)
+- default values for Task.status and Image.status (jdornak@redhat.com)
+- new model dockerfile; store df in db after build (ttomecek@redhat.com)
+- replace docker-io with docker (jdornak@redhat.com)
+
 * Mon Nov 03 2014 Jakub Dorňák <jdornak@redhat.com> 0.1-1
 - new package built with tito
 

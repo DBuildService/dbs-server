@@ -5,7 +5,7 @@ from setuptools import setup, find_packages
 
 setup(
     name         = "dbs",
-    version      = '0.1',
+    version      = '0.2',
     description  = "DBS Build Service",
     author       = "Matej Stuchlik",
     author_email = "mstuchli@redhat.com",
