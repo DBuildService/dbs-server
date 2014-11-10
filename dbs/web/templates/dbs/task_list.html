@@ -8,23 +8,21 @@ Task list
 
 <h1>Tasks</h1>
 <table class="datatable table table-striped table-bordered">
-    <thead>
+   <thead>
     <tr>
-        <th>ID</th>
-        <th>Base image</th>
-        <th>Repos/Tags</th>
         <th>Status</th>
-        <th>Info</th>
+        <th>Type</th>
+        <th>Started</th>
+        <th>Finished</th>
     </tr>
-    </thead>
-    <tbody>
+   </thead>
+   <tbody>
     {% for task in task_list %}
     <tr>
-        <td><a href="info.html">{{ task.date_started }}</a></td>
-        <td>{{ task.date_finished }}</td>
-        <td>uglystuff uglystuff:21.0</td>
         <td class="center success">{{ task.get_status }}</td>
         <td class="center">Packages: {{ task.get_type }}</td>
+        <td><a href="info.html">{{ task.date_started }}</a></td>
+        <td>{{ task.date_finished }}</td>
     </tr>
     {% endfor %}
     </tbody>

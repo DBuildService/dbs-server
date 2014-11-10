@@ -20,6 +20,3 @@ class TaskListView(ListView):
     model = Task
 
 task_list = TaskListView.as_view()
-
-#class NewImage()
-#    model = Image
