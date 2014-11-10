@@ -47,6 +47,9 @@ Group:          Development Tools
 Requires:       %{name}
 Requires:       docker
 Requires:       systemd
+Requires:       GitPython
+Requires:       docker-registry
+Requires:       redis
 Requires(preun):    systemd-units
 Requires(postun):   systemd-units
 Requires(post):     systemd-units
