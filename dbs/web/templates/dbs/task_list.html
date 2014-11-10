@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Task list
+{% endblock %}
+
+{% block content %}
+
+<h1>Tasks</h1>
+<table class="datatable table table-striped table-bordered">
+    <thead>
+    <tr>
+        <th>ID</th>
+        <th>Base image</th>
+        <th>Repos/Tags</th>
+        <th>Status</th>
+        <th>Info</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for task in task_list %}
+    <tr>
+        <td><a href="info.html">{{ task.date_started }}</a></td>
+        <td>{{ task.date_finished }}</td>
+        <td>uglystuff uglystuff:21.0</td>
+        <td class="center success">{{ task.get_status }}</td>
+        <td class="center">Packages: {{ task.get_type }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}
