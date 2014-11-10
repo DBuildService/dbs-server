@@ -26,6 +26,8 @@ Use the commandline interface to create user:
 
     sudo dbs createsuperuser
 
+If you want build images, you need to have worker running and need to have build image. Easiest way to get a build image is to clone [dock](https://github.com/DBuildService/dock) and do `make build-buildimage`.
+
 
 Development Instance
 --------------------
@@ -46,6 +48,10 @@ Initialize development database:
 Run development server:
 
     ./manage.py runserver
+
+Run worker:
+
+    ./manage.py celery worker -l INFO
 
 Voilà!
 
