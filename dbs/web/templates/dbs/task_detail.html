@@ -13,7 +13,11 @@ Task detail
     <li><h4>Owner </h4>{{ task.owner }}</li>
     <li><h4>Started </h4>{{ task.date_started }}</li>
     <li><h4>Finished </h4>{{ task.date_finished }}</li>
+    {% if task.image != nil  %}
     <li><h4>Image </h4><a href="{% url 'image/detail' task.image.hash %}">{{ task.image.hash }}</a></li>
+    {% else %}
+    <li>There is no image</li>
+    {% endif %}
     <li><h4>Args</h4></li>
     <li><pre>{{ task.task_data|linebreaks }}</pre></li>
 </ul>

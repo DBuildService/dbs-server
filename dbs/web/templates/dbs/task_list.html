@@ -24,7 +24,13 @@ Task list
         <td class="center">{{ task.get_type }}</td>
         <td>{{ task.date_started }}</td>
         <td>{{ task.date_finished }}</td>
+        {% if task.image != nil  %}
         <td><a href="{% url 'image/detail' task.image.hash %}">{{ task.image.hash }}</a></td>
+        {% else %}
+        <td>There is no image</td>
+        <!-- path 2 -->
+        {% endif %}
+
     </tr>
     {% endfor %}
     </tbody>
