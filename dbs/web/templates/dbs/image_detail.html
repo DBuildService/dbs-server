@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Image {{ image.hash }}
+{% endblock %}
+
+{% block content %}
+
+<h1>Image Detail</h1>
+<ul>
+    <li><h4>Image ID </h4>{{ image.hash }}</li>
+    <li><h4>[{{ image.get_status }}]</h4></li>
+    {% if image.parent %}
+    <li><h4>Parent Image ID </h4><a href="{% url 'image/detail' image.parent.hash %}">{{ image.parent.hash }}</a></li>
+    {% endif %}
+    {% if image.children %}
+    <li><h4>Children</h4></li>
+    <ul>
+        {% for child in image.children %}
+        <li><a href="{% url 'image/detail' child.hash %}">{{ child.hash }}</a></li>
+        {% endfor %}
+    </ul>
+    {% endif %}
+    <li><h4>Tags</h4></li>
+    <ul>
+        {% for tag in image.tags %}
+        <li>{{ tag }}</li>
+        {% endfor %}
+    </ul>
+    <li><h4>Dockerfile</h4></li>
+    <ul><li>{{ image.dockerfile.content|linebreaks }}</li></ul>
+    <li><h4>Rpms</h4></li>
+    <ul>
+        {% for rpm in image.ordered_rpms_list %}
+        <li>{{ rpm }}</li>
+        {% endfor %}
+    </ul>
+    <li><h4>Logs</h4></li>
+    <ul>
+        {# TODO: display logs #}
+        <li>TBD</li>
+    </ul>
+    </ul>
+</ul>
+
+{% endblock %}

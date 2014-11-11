@@ -161,7 +161,7 @@ def image_info(args, image_id, **kwargs):
         "hash": img.hash,
         "status": img.get_status_display(),
         "is_invalidated": img.is_invalidated,
-        "rpms": img.rpms_list(),
+        "rpms": img.ordered_rpms_list(),
         "tags": img.tags,
         # "registries": copy.copy(registries),
         "parent": getattr(img.parent, 'hash', None)

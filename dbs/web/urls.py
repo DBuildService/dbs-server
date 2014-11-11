@@ -7,6 +7,7 @@ from . import views
 urlpatterns = patterns('',
     url(r'^tasks/$',    views.task_list),
     url(r'^images/$',   views.image_list),
+    url(r'^image/(?P<hash>[a-zA-Z0-9]+)/$', views.image_detail, name="image/detail"),
     url(r'^$',           views.home),
 )
 

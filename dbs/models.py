@@ -188,8 +188,12 @@ class Image(models.Model):
     def tags(self):
         return Tag.objects.for_image_as_list(self)
 
-    def rpms_list(self):
-        return list(Rpm.objects.filter(part_of__image=self).values_list('nvr', flat=True))
+    @property
+    def children(self):
+        return Image.objects.children(self)
+
+    def ordered_rpms_list(self):
+        return list(Rpm.objects.filter(part_of__image=self).values_list('nvr', flat=True).order_by("nvr"))
 
     @property
     def rpms_count(self):
