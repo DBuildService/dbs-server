@@ -2,6 +2,7 @@
 Description=DBS Worker
 
 [Service]
+User=dbs
 ExecStart=/usr/bin/dbs celery worker -l INFO
 
 [Install]
