@@ -23,7 +23,7 @@ Images list
     <tr>
         <td><a href="info.html">{{ image.hash }}</a></td>
         <td>{{ image.base_tag }}</td>
-        <td>uglystuff uglystuff:21.0</td>
+        <td>{% for tag in image.tags %}{{ tag }} {% endfor %}</td>
         <td class="center success">{{ image.get_status }}</td>
         <td class="center">Packages: {{ image.rpms.count }}</td>
         <td class="center"><a href="#">show logs</a>	</td>
