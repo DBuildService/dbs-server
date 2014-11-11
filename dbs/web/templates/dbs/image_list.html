@@ -25,7 +25,7 @@ Images list
         <td>{{ image.base_tag }}</td>
         <td>{% for tag in image.tags %}{{ tag }} {% endfor %}</td>
         <td class="center success">{{ image.get_status }}</td>
-        <td class="center">Packages: {{ image.rpms.count }}</td>
+        <td class="center">Packages: {{ image.rpms_count }}</td>
         <td class="center"><a href="#">show logs</a>	</td>
     </tr>
 {% endfor %}

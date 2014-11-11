@@ -191,6 +191,10 @@ class Image(models.Model):
     def rpms_list(self):
         return list(Rpm.objects.filter(part_of__image=self).values_list('nvr', flat=True))
 
+    @property
+    def rpms_count(self):
+        return Rpm.objects.filter(part_of__image=self).count()
+
     def add_rpms_list(self, nvr_list):
         """
         provide a list of RPM nvrs and link them to image
