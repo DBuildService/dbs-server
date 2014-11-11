@@ -14,15 +14,17 @@ Task list
         <th>Type</th>
         <th>Started</th>
         <th>Finished</th>
+        <th>Image</th>
     </tr>
    </thead>
    <tbody>
     {% for task in task_list %}
     <tr>
-        <td class="center success">{{ task.get_status }}</td>
-        <td class="center">Packages: {{ task.get_type }}</td>
-        <td><a href="info.html">{{ task.date_started }}</a></td>
+        <td class="center success"><a href="{% url 'task/detail' task.id %}">{{ task.get_status }}</a></td>
+        <td class="center">{{ task.get_type }}</td>
+        <td>{{ task.date_started }}</td>
         <td>{{ task.date_finished }}</td>
+        <td><a href="{% url 'image/detail' task.image.hash %}">{{ task.image.hash }}</a></td>
     </tr>
     {% endfor %}
     </tbody>

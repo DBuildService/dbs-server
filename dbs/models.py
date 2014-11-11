@@ -22,6 +22,9 @@ class TaskData(models.Model):
 
     objects = TaskDataQuerySet.as_manager()
 
+    def __unicode__(self):
+        return json.dumps(json.loads(self.json), indent=4)
+
 
 class Task(models.Model):
     celery_id = models.CharField(max_length=42, blank=True, null=True)

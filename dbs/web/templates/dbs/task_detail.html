@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% block title %}
+Task detail
+{% endblock %}
+
+{% block content %}
+
+<h1>Task Detail</h1>
+<ul>
+    <li>{{ task.get_status }}</li>
+    <li>{{ task.get_type }}</li>
+    <li><h4>Owner </h4>{{ task.owner }}</li>
+    <li><h4>Started </h4>{{ task.date_started }}</li>
+    <li><h4>Finished </h4>{{ task.date_finished }}</li>
+    <li><h4>Image </h4><a href="{% url 'image/detail' task.image.hash %}">{{ task.image.hash }}</a></li>
+    <li><h4>Args</h4></li>
+    <li><pre>{{ task.task_data|linebreaks }}</pre></li>
+</ul>
+
+{% endblock %}

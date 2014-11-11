@@ -29,3 +29,12 @@ class ImageView(DetailView):
         return get_object_or_404(Image, hash=self.kwargs.get('hash', None))
 
 image_detail = ImageView.as_view()
+
+
+class TaskView(DetailView):
+    model = Task
+
+    def get_object(self):
+        return get_object_or_404(Task, id=self.kwargs.get('task_id', None))
+
+task_detail = TaskView.as_view()
