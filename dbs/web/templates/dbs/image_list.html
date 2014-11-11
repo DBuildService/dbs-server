@@ -22,7 +22,7 @@ Images list
 {% for image in image_list %}
     <tr>
         <td><a href="info.html">{{ image.hash }}</a></td>
-        <td>{{ image.base_tag }}</td>
+        <td>{{ image.parent.hash }}</td>
         <td>{% for tag in image.tags %}{{ tag }} {% endfor %}</td>
         <td class="center success">{{ image.get_status }}</td>
         <td class="center">Packages: {{ image.rpms_count }}</td>
