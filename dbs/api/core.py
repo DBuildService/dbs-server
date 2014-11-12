@@ -29,10 +29,14 @@ def new_image_callback(task_id, response_tuple):
     t.date_finished = datetime.now()
     if response_hash:
         image_id = chain_dict_get(response_hash, ['built_img_info', 'Id'])
+        logger.debug("image_id = %s", image_id)
         parent_image_id = chain_dict_get(response_hash, ['base_img_info', 'Id'])
+        logger.debug("parent_image_id = %s", parent_image_id)
         image_tags = chain_dict_get(response_hash, ['built_img_info', 'RepoTags'])
+        logger.debug("image_tags = %s", image_tags)
         parent_tags = chain_dict_get(response_hash, ['base_img_info', 'RepoTags'])
-        if image_id and parent_image_id and image_tags and parent_tags:
+        logger.debug("parent_tags = %s", parent_tags)
+        if image_id and parent_image_id:
             parent_image = Image.create(parent_image_id, Image.STATUS_BASE, tags=parent_tags)
             image = Image.create(image_id, Image.STATUS_BUILD, tags=image_tags,
                                  task=t, parent=parent_image)
