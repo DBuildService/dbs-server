@@ -45,6 +45,10 @@ Initialize development database:
 
     ./manage.py syncdb
 
+Run a local Docker registry in order to store the built images:
+
+    docker run -p 5000:5000 registry
+
 Run development server:
 
     ./manage.py runserver
