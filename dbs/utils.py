@@ -17,3 +17,4 @@ def chain_dict_get(dict_object, keys_list, default=None):
             d = d[key]
         except (KeyError, TypeError):
             return default
+    return d
