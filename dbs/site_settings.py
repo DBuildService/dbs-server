@@ -13,8 +13,8 @@ with open(os.path.join(BASE_DIR, 'secret_key'), 'rb') as f:
     SECRET_KEY = repr(f.read())
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG   = True
-DBDEBUG = 'DBDEBUG' in os.environ and os.environ['DBDEBUG'] and True or False
+DEBUG   = os.environ.get('DBS_DEBUG', True) and True or False
+DBDEBUG = os.environ.get('DBS_DEBUG', True) == 'DB'
 
 TEMPLATE_DEBUG = 'TEMPLATE_DEBUG' in os.environ and os.environ['TEMPLATE_DEBUG'] and True or False
 
