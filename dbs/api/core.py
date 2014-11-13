@@ -25,7 +25,7 @@ def new_image_callback(task_id, response_tuple):
         response_hash, df = response_tuple
     except (TypeError, ValueError):
         response_hash, df = None, None
-    t = Task.objects.filter(id=task_id).first()
+    t = Task.objects.get(id=task_id)
     t.date_finished = datetime.now()
     if response_hash:
         image_id = chain_dict_get(response_hash, ['built_img_info', 'Id'])
@@ -97,7 +97,7 @@ def rebuild(post_args, image_id, **kwargs):
 
 def move_image_callback(task_id, response):
     logger.debug("move callback: %s %s", task_id, response)
-    t = Task.objects.filter(id=task_id).first()
+    t = Task.objects.get(id=task_id)
     t.date_finished = datetime.now()
     if response and response.get("error", False):
         t.status = Task.STATUS_FAILED
@@ -127,7 +127,7 @@ def invalidate(post_args, image_id, **kwargs):
 
 
 def task_status(args, task_id, request, **kwargs):
-    task = Task.objects.filter(id=task_id).first()
+    task = Task.objects.get(id=task_id)
     response = {
         "task_id": task_id,
         "status": task.get_status_display(),
@@ -149,7 +149,7 @@ def task_status(args, task_id, request, **kwargs):
 
 
 def image_info(args, image_id, **kwargs):
-    img = Image.objects.filter(hash=image_id).first()
+    img = Image.objects.get(hash=image_id)
 
     #rpms = []
     #for rpm in img.rpms.all():
@@ -193,7 +193,7 @@ def list_tasks(args, request, **kwargs):
 
 
 def image_status(args, image_id, **kwargs):
-    img = Image.objects.filter(hash=image_id).first()
+    img = Image.objects.get(hash=image_id)
     response = {"image_id": image_id,
                 "status": img.get_status_display()}
     return response
