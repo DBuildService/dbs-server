@@ -6,6 +6,7 @@ from datetime import datetime
 from functools import partial
 import socket
 from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import get_object_or_404
 
 from dbs.models import Task, TaskData, Dockerfile, Image
 from dbs.task_api import TaskApi
@@ -25,7 +26,7 @@ def new_image_callback(task_id, response_tuple):
         response_hash, df = response_tuple
     except (TypeError, ValueError):
         response_hash, df = None, None
-    t = Task.objects.get(id=task_id)
+    t = get_object_or_404(Task, id=task_id)
     t.date_finished = datetime.now()
     if response_hash:
         image_id = chain_dict_get(response_hash, ['built_img_info', 'Id'])
@@ -97,7 +98,7 @@ def rebuild(post_args, image_id, **kwargs):
 
 def move_image_callback(task_id, response):
     logger.debug("move callback: %s %s", task_id, response)
-    t = Task.objects.get(id=task_id)
+    t = get_object_or_404(Task, id=task_id)
     t.date_finished = datetime.now()
     if response and response.get("error", False):
         t.status = Task.STATUS_FAILED
@@ -127,7 +128,7 @@ def invalidate(post_args, image_id, **kwargs):
 
 
 def task_status(args, task_id, request, **kwargs):
-    task = Task.objects.get(id=task_id)
+    task = get_object_or_404(Task, id=task_id)
     response = {
         "task_id": task_id,
         "status": task.get_status_display(),
@@ -149,7 +150,7 @@ def task_status(args, task_id, request, **kwargs):
 
 
 def image_info(args, image_id, **kwargs):
-    img = Image.objects.get(hash=image_id)
+    img = get_object_or_404(Image, hash=image_id)
 
     #rpms = []
     #for rpm in img.rpms.all():
@@ -193,7 +194,7 @@ def list_tasks(args, request, **kwargs):
 
 
 def image_status(args, image_id, **kwargs):
-    img = Image.objects.get(hash=image_id)
+    img = get_object_or_404(Image, hash=image_id)
     response = {"image_id": image_id,
                 "status": img.get_status_display()}
     return response
