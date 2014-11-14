@@ -64,6 +64,8 @@ class Task(models.Model):
     def get_status(self):
         return self._STATUS_NAMES[self.status]
 
+    class Meta:
+        ordering = ["-date_finished"]
 
 class Package(models.Model):
     """ TODO: software collections """
