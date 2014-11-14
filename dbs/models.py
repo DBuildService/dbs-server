@@ -27,36 +27,35 @@ class TaskData(models.Model):
 
 
 class Task(models.Model):
-    celery_id = models.CharField(max_length=42, blank=True, null=True)
-    date_started = models.DateTimeField(auto_now_add=True)
-    date_finished = models.DateTimeField(null=True, blank=True)
-    builddev_id = models.CharField(max_length=38)
-
     STATUS_PENDING  = 1
     STATUS_RUNNING  = 2
     STATUS_FAILED   = 3
     STATUS_SUCCESS  = 4
-
-    _STATUS_NAMES = {
+    _STATUS_NAMES   = {
         STATUS_PENDING: 'Pending',
         STATUS_RUNNING: 'Running',
         STATUS_FAILED:  'Failed',
         STATUS_SUCCESS: 'Successful',
     }
 
-    status = models.IntegerField(choices=_STATUS_NAMES.items(), default=STATUS_PENDING)
-
     TYPE_BUILD  = 1
     TYPE_MOVE   = 2
-
     _TYPE_NAMES = {
         TYPE_BUILD: 'Build',
         TYPE_MOVE:  'Move',
     }
-    type = models.IntegerField(choices=_TYPE_NAMES.items())
 
-    owner = models.CharField(max_length=38)
-    task_data = models.ForeignKey(TaskData)
+    celery_id       = models.CharField(max_length=42, blank=True, null=True)
+    date_started    = models.DateTimeField(auto_now_add=True)
+    date_finished   = models.DateTimeField(null=True, blank=True)
+    builddev_id     = models.CharField(max_length=38)
+    status          = models.IntegerField(choices=_STATUS_NAMES.items(), default=STATUS_PENDING)
+    type            = models.IntegerField(choices=_TYPE_NAMES.items())
+    owner           = models.CharField(max_length=38)
+    task_data       = models.ForeignKey(TaskData)
+
+    class Meta:
+        ordering = ["-date_finished"]
 
     def get_type(self):
         return self._TYPE_NAMES[self.type]
@@ -64,12 +63,12 @@ class Task(models.Model):
     def get_status(self):
         return self._STATUS_NAMES[self.status]
 
-    class Meta:
-        ordering = ["-date_finished"]
+
 
 class Package(models.Model):
     """ TODO: software collections """
     name = models.CharField(max_length=64)
+
 
 
 class RpmQuerySet(models.QuerySet):
@@ -84,6 +83,7 @@ class RpmQuerySet(models.QuerySet):
             logger.error("'%s' is not an N-V-R", nvr)
 
 
+
 class Rpm(models.Model):
     package = models.ForeignKey(Package)
     nvr = models.CharField(max_length=128)
@@ -95,6 +95,7 @@ class Rpm(models.Model):
         return "%s: %s" % (self.package, self.nvr)
 
 
+
 class Content(models.Model):
     """
     generic many to many
@@ -104,8 +105,11 @@ class Content(models.Model):
     content_object = GenericForeignKey('content_type', 'object_id')
 
 
+
 class Registry(models.Model):
     url = models.URLField()
+
+
 
 class YumRepo(models.Model):
     url = models.URLField()
@@ -141,29 +145,25 @@ class ImageQuerySet(models.QuerySet):
         return count
 
 
-class Image(models.Model):
-    hash = models.CharField(max_length=64, primary_key=True)
-    parent = models.ForeignKey('self', null=True, blank=True)  # base images doesnt have parents
-    task = models.OneToOneField(Task, null=True, blank=True)
 
+class Image(models.Model):
     STATUS_BUILD    = 1
     STATUS_TESTING  = 2
     STATUS_STABLE   = 3
     STATUS_BASE     = 4
-
-    _STATUS_NAMES = {
+    _STATUS_NAMES   = {
         STATUS_BUILD:   'Built',
         STATUS_TESTING: 'Pushed-Testing',
         STATUS_STABLE:  'Pushed-Stable',
         STATUS_BASE:    'Base-Image',
     }
-    status = models.IntegerField(choices=_STATUS_NAMES.items(), default=STATUS_BUILD)
 
-    content = models.ManyToManyField(Content)
-
-    # base images won't have dockerfile
-    dockerfile = models.ForeignKey('Dockerfile', null=True, blank=True)
-
+    hash        = models.CharField(max_length=64, primary_key=True)
+    parent      = models.ForeignKey('self', null=True, blank=True)  # base images doesnt have parents
+    task        = models.OneToOneField(Task, null=True, blank=True)
+    status      = models.IntegerField(choices=_STATUS_NAMES.items(), default=STATUS_BUILD)
+    content     = models.ManyToManyField(Content)
+    dockerfile  = models.ForeignKey('Dockerfile', null=True, blank=True)
     is_invalidated = models.BooleanField(default=False)
 
     objects = ImageQuerySet.as_manager()
@@ -216,6 +216,7 @@ class Image(models.Model):
                 self.content.add(content)
 
 
+
 class TagQuerySet(models.QuerySet):
     def for_image(self, image):
         return self.filter(registry_bindings__image=image)
@@ -231,11 +232,16 @@ class Tag(models.Model):
     objects = TagQuerySet.as_manager()
 
 
+
 class ImageRegistryRelation(models.Model):
     tag = models.ForeignKey(Tag, related_name="registry_bindings")
     image = models.ForeignKey(Image)
     registry = models.ForeignKey(Registry, blank=True, null=True)
 
 
+
 class Dockerfile(models.Model):
     content = models.TextField()
+
+
+
