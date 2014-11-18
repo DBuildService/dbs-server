@@ -14,6 +14,7 @@ Image {{ image.hash }}
     <li><h4>Parent Image ID </h4><a href="{% url 'image/detail' image.parent.hash %}">{{ image.parent.hash }}</a></li>
     {% endif %}
     {% if image.task %}
+    <li><h4>Task </h4><a href="{% url 'task/detail' image.task.id %}">{{ image.task.id }}</a></li>
     <li><h4>Built on </h4>{{ image.task.date_finished }}</li>
     {% endif %}
     {% if image.children %}
