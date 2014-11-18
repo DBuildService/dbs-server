@@ -23,11 +23,13 @@ class ErrorDuringRequest(Exception):
 
 def new_image_callback(task_id, response_tuple):
     try:
-        response_hash, df = response_tuple
+        response_hash, df, build_log = response_tuple
     except (TypeError, ValueError):
-        response_hash, df = None, None
+        response_hash, df, build_log = None, None, None
     t = get_object_or_404(Task, id=task_id)
     t.date_finished = datetime.now()
+    if build_log:
+        t.log = '\n'.join(build_log)
     if response_hash:
         image_id = chain_dict_get(response_hash, ['built_img_info', 'Id'])
         logger.debug("image_id = %s", image_id)

@@ -45,6 +45,10 @@ Task {{ task.id }}
     {% endif %}
     <li><h4>Args</h4></li>
     <li><pre>{{ task.task_data|linebreaks }}</pre></li>
+    {% if task.log %}
+    <li><h4>Logs</h4></li>
+    <li><pre>{{ task.log|linebreaks }}</pre></li>
+    {% endif %}
 </ul>
 
 {% endblock %}

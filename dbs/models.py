@@ -48,6 +48,7 @@ class Task(models.Model):
     type            = models.IntegerField(choices=_TYPE_NAMES.items())
     owner           = models.CharField(max_length=38)
     task_data       = models.ForeignKey(TaskData)
+    log             = models.TextField(blank=True, null=True)
 
     class Meta:
         ordering = ["-date_finished"]
