@@ -7,8 +7,7 @@ from django.http import JsonResponse
 from django.views.generic import View
 
 from .core import build, rebuild, ErrorDuringRequest
-from dbs.api.core import move_image, invalidate, task_status, image_info, list_images, image_status, image_deps
-from dbs.web.views import task_list
+from dbs.api.core import move_image, invalidate, task_status, image_info, list_images, image_status, image_deps, list_tasks
 from ..task_api import TaskApi
 
 
@@ -122,7 +121,7 @@ class TaskStatusCall(ApiCall):
 
 
 class ListTasksCall(ApiCall):
-    func = task_list
+    func = list_tasks
 
 
 class NewImageCall(ApiCall):
