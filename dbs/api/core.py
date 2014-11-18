@@ -171,6 +171,8 @@ def image_info(args, image_id, **kwargs):
         # "registries": copy.copy(registries),
         "parent": getattr(img.parent, 'hash', None)
     }
+    if img.task:
+        response['built_on'] = str(img.task.date_finished)
 
     return response
 
