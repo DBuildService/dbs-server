@@ -25,6 +25,7 @@ Requires:       mod_wsgi
 Requires:       python-celery
 Requires:       python-django >= 1.7
 Requires:       python-django-celery
+Requires:       python-django-simple-menu
 Requires(pre):  /usr/sbin/useradd
 
 
