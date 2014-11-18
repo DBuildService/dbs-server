@@ -26,6 +26,20 @@ class TaskData(models.Model):
         return json.dumps(json.loads(self.json), indent=4)
 
 
+class TaskQuerySet(models.QuerySet):
+    def get_by_celery_id(self, celery_id):
+        return self.get(celery_id=celery_id)
+
+    def change_status_to_running(self, task_id):
+        try:
+            task = self.get_by_celery_id(task_id)
+        except ObjectDoesNotExist:
+            logger.error("There is no task with celery id '%s'", task_id)
+        else:
+            task.set_status_running(save=True)
+            return task
+
+
 class Task(models.Model):
     STATUS_PENDING  = 1
     STATUS_RUNNING  = 2
@@ -54,8 +68,13 @@ class Task(models.Model):
     owner           = models.CharField(max_length=38)
     task_data       = models.ForeignKey(TaskData)
 
+    objects = TaskQuerySet.as_manager()
+
     class Meta:
         ordering = ["-date_finished"]
+
+    def __unicode__(self):
+        return "%d [%s]" % (self.id, self.get_status())
 
     def get_type(self):
         return self._TYPE_NAMES[self.type]
@@ -63,6 +82,13 @@ class Task(models.Model):
     def get_status(self):
         return self._STATUS_NAMES[self.status]
 
+    def set_status(self, status, save=True):
+        self.status = status
+        if save:
+            self.save()
+
+    def set_status_running(self, save=True):
+        self.set_status(Task.STATUS_RUNNING, save)
 
 
 class Package(models.Model):
