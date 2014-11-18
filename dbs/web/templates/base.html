@@ -1,4 +1,5 @@
 {% load staticfiles %}
+{% load menu %}{% generate_menu %}
 <!DOCTYPE html>
 <!--[if IE 8]><html class="ie8"><![endif]-->
 <!--[if IE 9]><html class="ie9"><![endif]-->
@@ -92,6 +93,20 @@
             </ul>
           </li>
         </ul><!-- /navbar-utility -->
+
+	<ul class="nav navbar-nav navbar-primary">
+	  {% for item in menus.main %}
+	  <li {% if item.selected %} class="active" {% endif %}>
+	    <a href="{{ item.url }}">{{ item.title }}</a></li>
+	  </li>
+	  {% endfor %}
+	</ul><!-- /navbar-primary -->
+
+      </div><!-- /navbar-collapse -->
+    </nav><!-- /navigation -->
+    <div class="container-fluid">
+      <div class="row">
+        <div class="col-md-12">
 
 <!-- main content -->
 

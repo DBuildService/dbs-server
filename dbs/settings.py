@@ -22,6 +22,10 @@ from .site_settings import (
 
 
 # Application definition
+from django.conf import global_settings
+TEMPLATE_CONTEXT_PROCESSORS = global_settings.TEMPLATE_CONTEXT_PROCESSORS + (
+    'django.core.context_processors.request',
+)
 
 INSTALLED_APPS = (
     'django.contrib.admin',
@@ -30,6 +34,10 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    # django-simple-menu
+    'menu',
+
     'dbs',
     'dbs.api',
     'dbs.web',
