@@ -36,8 +36,8 @@ def task_sent_handler(**kwargs):
     except KeyError:
         logger.error("missing task_id in kwargs")
     else:
-        # TODO: ugly
-        # TODO: this won't work when worker is on different machine
-        #       proper rest API should be created
         from dbs.models import Task
-        Task.objects.change_status_to_running(task_id=task_id)
+        task = Task.objects.get(celery_id=task_id)
+        task.state = Task.STATUS_RUNNING
+        task.save()
+
