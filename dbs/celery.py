@@ -1,7 +1,9 @@
 from __future__ import absolute_import, division, generators, nested_scopes, print_function, unicode_literals, with_statement
+from django.core.exceptions import ObjectDoesNotExist
 
 import os
 import logging
+import time
 
 from celery import Celery
 from celery.signals import task_prerun
@@ -31,13 +33,20 @@ def debug_task(self):
 @task_prerun.connect
 def task_sent_handler(**kwargs):
     logger.info("kwargs = %s", kwargs)
+    # broker is quicker than relational DB so this usually gets executed sooner than we have
+    # celery task in DB, this suspend could solve it
+    time.sleep(1)
     try:
         task_id = kwargs['task_id']
     except KeyError:
         logger.error("missing task_id in kwargs")
     else:
         from dbs.models import Task
-        task = Task.objects.get(celery_id=task_id)
-        task.state = Task.STATUS_RUNNING
-        task.save()
+        try:
+            task = Task.objects.get(celery_id=task_id)
+        except ObjectDoesNotExist:
+            logger.error("No such task '%s'", task_id)
+        else:
+            task.state = Task.STATUS_RUNNING
+            task.save()
 
