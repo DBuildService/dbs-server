@@ -3,7 +3,37 @@ from __future__ import absolute_import, division, generators, nested_scopes, pri
 from celery import shared_task
 from dock.core import DockerBuilder, DockerTasker
 from dock.outer import PrivilegedDockerBuilder
+from dbs.lint import DockerfileLint
 
+class LintErrors(Exception):
+    """
+    This exception indicates the build was not attempted due to
+    lint errors.
+    """
+
+@shared_task
+def linter(git_url, git_path=None, git_commit=None):
+    """
+    run dockerfile_lint on the Dockerfile we want to build
+
+    :param git_url: url to git repo
+    :param git_path: path to dockerfile within git repo (default is ./Dockerfile)
+    :param git_commit: which commit to checkout (master by default)
+    :return: HTML markup of Dockerfile with dockerfile_lint messages
+    """
+    json = None
+    try:
+        lint = DockerfileLint (git_url, git_path, git_commit)
+        html_markup = lint.run ()
+        json = lint.get_json ()
+    except OSError as exc:
+        # Perhaps dockerfile_lint is not installed
+        html_markup = "Executing dockerfile_lint: %s" % exc.strerror
+    except ValueError as exc:
+        # Perhaps there was a problem parsing the JSON output
+        html_markup = "Internal error: %s" % exc.message
+    finally:
+        return { "json": json, "html_markup": html_markup }
 
 @shared_task
 def build_image_hostdocker(
