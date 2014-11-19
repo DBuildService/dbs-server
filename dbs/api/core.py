@@ -146,7 +146,7 @@ def task_status(args, task_id, request, **kwargs):
         task_data = json.loads(task.task_data.json)
         # domain = request.get_host()
         domain = socket.gethostbyname(request.META['SERVER_NAME'])
-        response['message'] = "You can pull your image with command: 'dock pull %s:5000/%s'" % \
+        response['message'] = "You can pull your image with command: 'docker pull %s:5000/%s'" % \
                               (domain, task_data['tag'])
     return response
 
