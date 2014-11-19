@@ -1,0 +1,10 @@
+language: python
+
+python:
+  - '2.7'
+
+install:
+  - pip install -e git+git://github.com/DBuildService/dock.git
+
+script:
+  - python ./setup.py build && python -c 'import compileall, sys; sys.exit(not compileall.compile_dir("build"))'
