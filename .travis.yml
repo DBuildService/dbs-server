@@ -1,0 +1,7 @@
+language: python
+
+python:
+  - '2.7'
+
+script:
+  - python ./setup.py build && python -c 'import compileall, sys; sys.exit(not compileall.compile_dir("build"))'
