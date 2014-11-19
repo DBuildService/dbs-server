@@ -37,7 +37,7 @@ class TaskApi(object):
 
     def build_docker_image(self, build_image, git_url, local_tag, git_dockerfile_path=None, git_commit=None,
                            parent_registry=None, target_registries=None, tag=None, repos=None,
-                           callback=None, kwargs=None):
+                           callback=None, lint_callback=None, kwargs=None):
         """
         build docker image from supplied git repo
 
@@ -67,14 +67,43 @@ class TaskApi(object):
                        'git_commit': git_commit,
                        'git_dockerfile_path': git_dockerfile_path,
                        'repos': repos}
-        task_info = tasks.build_image.apply_async(args=args, kwargs=task_kwargs,
-                                                   link=tasks.submit_results.s())
-        task_id = task_info.task_id
-        if callback:
-            t = Thread(target=watch_task, args=(task_info, callback, kwargs))
-            #w.daemon = True
-            t.start()
-        return task_id
+
+        # The linter task, which runs dockerfile_lint
+        linter_task = tasks.linter.s(git_url,
+                                     git_dockerfile_path,
+                                     git_commit)
+
+        # This task builds the image
+        build_image_task = tasks.build_image.subtask((build_image,
+                                                      git_url,
+                                                      local_tag),
+                                                     **task_kwargs)
+
+        # This task submits the results
+        submit_results_task = tasks.submit_results.s()
+
+        # Chain the tasks together in the right order and start them
+        task_chain = (linter_task |
+                      build_image_task |
+                      submit_results_task).apply_async()
+
+        # Call lint_callback when the linter task is done
+        linter = task_chain.parent.parent # 3rd from last task
+        lint_watcher = Thread(target=watch_task,
+                              args=(linter,
+                                    lint_callback,
+                                    kwargs))
+        lint_watcher.start()
+
+        # Call callback when the entire chain is done
+        chain_watcher = Thread(target=watch_task,
+                               args=(task_chain,
+                                     callback,
+                                     kwargs))
+        chain_watcher.start()
+
+        # Return the celery task ID of the chain
+        return task_chain.task_id
 
     def find_dockerfiles_in_git(self):
         raise NotImplemented()

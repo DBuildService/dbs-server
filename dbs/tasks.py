@@ -4,6 +4,7 @@ from celery import shared_task
 from dock.core import DockerBuilder, DockerTasker
 from dock.outer import PrivilegedDockerBuilder
 from dbs.lint import DockerfileLint
+import time
 
 class LintErrors(Exception):
     """
@@ -73,13 +74,14 @@ def build_image_hostdocker(
     # TODO: postbuild_data = run_postbuild_plugins(d, private_tag)
     return inspect_data
 
-@shared_task
-def build_image(build_image, git_url, local_tag, git_dockerfile_path=None,
+@shared_task(throws=(LintErrors,))
+def build_image(lint, build_image, git_url, local_tag, git_dockerfile_path=None,
                 git_commit=None, parent_registry=None, target_registries=None,
                 tag=None, repos=None, store_results=True):
     """
     build docker image from provided arguments inside privileged container
 
+    :param lint: output from linter task
     :param build_image: name of the build image (supplied docker image is built inside this image)
     :param git_url: url to git repo
     :param local_tag: image is known within the service with this tag
@@ -93,6 +95,13 @@ def build_image(build_image, git_url, local_tag, git_dockerfile_path=None,
                           in local docker registry
     :return: dict with data from docker inspect
     """
+    if lint and lint["json"]:
+        count = lint["json"]["error"]["count"]
+        if count > 0:
+            time.sleep (1) # Shouldn't be needed but seems to be
+            raise LintErrors("Build aborted: %d dockerfile_lint errors" %
+                             count)
+
     db = PrivilegedDockerBuilder(build_image, {
         "git_url": git_url,
         "local_tag": local_tag,
@@ -138,4 +147,4 @@ def submit_results(result):
     """
     # 2 requests, one for 'finished', other for data
     print(result)
-
+    return result

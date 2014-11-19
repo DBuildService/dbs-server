@@ -8,7 +8,7 @@ import socket
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
 
-from dbs.models import Task, TaskData, Dockerfile, Image
+from dbs.models import Task, TaskData, TaskLint, Dockerfile, Image
 from dbs.task_api import TaskApi
 from dbs.utils import chain_dict_get
 
@@ -20,6 +20,13 @@ builder_api = TaskApi()
 class ErrorDuringRequest(Exception):
     """ indicate that there was an error during processing request; e.g. 404, invalid sth... """
 
+
+def lint_output_callback(task_id, lint, **kwargs):
+    t = Task.objects.get(id=task_id)
+    tl = TaskLint(lint=lint["html_markup"])
+    tl.save()
+    t.task_lint = tl
+    t.save()
 
 def new_image_callback(task_id, response_tuple):
     try:
@@ -77,10 +84,12 @@ def build(post_args, **kwargs):
              type=Task.TYPE_BUILD, owner=owner, task_data=td)
     t.save()
 
+    lint_callback = partial(lint_output_callback, t.id)
     callback = partial(new_image_callback, t.id)
 
     post_args.update({'build_image': "buildroot-fedora", 'local_tag': local_tag,
-                 'callback': callback})
+                      'callback': callback,
+                      'lint_callback': lint_callback})
     task_id = builder_api.build_docker_image(**post_args)
     t.celery_id = task_id
     t.save()
