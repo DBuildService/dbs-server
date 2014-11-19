@@ -21,7 +21,11 @@ def watch_task(task, callback, kwargs=None):
 
     :return: None
     """
-    response = task.wait()
+    try:
+        response = task.wait()
+    except Exception as exc:
+        response = exc
+
     if kwargs:
         callback(response, **kwargs)
     else:

@@ -59,6 +59,7 @@ def new_image_callback(task_id, response_tuple):
 
         t.status = Task.STATUS_SUCCESS
     else:
+        logger.debug("task failed: %s" % repr (response_tuple))
         t.status = Task.STATUS_FAILED
     t.save()
 
