@@ -65,6 +65,10 @@ in Firewall. For Fedora 21 this can be done so:
     firewall-cmd --permanent --add-port=8000/tcp
     ./manage.py runserver 0.0.0.0:8000
 
+For dockerfile_lint support, you'll need to install it:
+
+    sudo npm install -g git+https://github.com/redhataccess/dockerfile_lint
+
 Manipulate with the data
 ------------------------
 
