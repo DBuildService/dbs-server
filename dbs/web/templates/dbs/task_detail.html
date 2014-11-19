@@ -49,6 +49,10 @@ Task {{ task.id }}
     <li><h4>Logs</h4></li>
     <li><pre>{{ task.log|linebreaks }}</pre></li>
     {% endif %}
+    {% if task.task_lint != nil %}
+    <li><h4>Dockerfile lint</h4>
+    {{ task.task_lint|safe }}</li>
+    {% endif %}
 </ul>
 
 {% endblock %}
