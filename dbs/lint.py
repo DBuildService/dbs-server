@@ -46,7 +46,7 @@ class DockerfileLint:
         if self._temp_dir:
             try:
                 shutil.rmtree(self._temp_dir)
-            except (IOError, OSError) as exc:
+            except (IOError, OSError, AttributeError) as exc:
                 pass
 
     def _get_dockerfile (self):
@@ -152,6 +152,14 @@ class DockerfileLint:
         self._get_dockerfile ()
         self._run_dockerfile_lint ()
         self._mark_dockerfile ()
+
+        if self._temp_dir:
+            try:
+                shutil.rmtree(self._temp_dir)
+                self._temp_dir = None
+            except (IOError, OSError) as exc:
+                pass
+
         return self._html_markup
 
     def get_json (self):
