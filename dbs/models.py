@@ -20,6 +20,12 @@ class TaskData(models.Model):
         return json.dumps(json.loads(self.json), indent=4)
 
 
+class TaskLint(models.Model):
+    lint = models.TextField()
+
+    def __unicode__(self):
+        return self.lint
+
 
 class Task(models.Model):
     STATUS_PENDING  = 1
@@ -48,6 +54,7 @@ class Task(models.Model):
     type            = models.IntegerField(choices=_TYPE_NAMES.items())
     owner           = models.CharField(max_length=38)
     task_data       = models.ForeignKey(TaskData)
+    task_lint       = models.ForeignKey(TaskLint, null=True, blank=True)
     log             = models.TextField(blank=True, null=True)
 
     class Meta:
