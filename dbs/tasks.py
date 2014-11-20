@@ -78,11 +78,11 @@ def build_image(build_image, git_url, local_tag, git_dockerfile_path=None,
 
 
 @shared_task
-def push_image(image_name, source_registry, target_registry, tags):
+def push_image(image_id, source_registry, target_registry, tags):
     """
     pull image from source_registry and push it to target_registry (with provided tags)
 
-    :param image_name: image to pull
+    :param image_id: image to pull
     :param source_registry: registry to pull image from
     :param target_registry: registry to push image to
     :param tags: list of tags to tag image with before pushing it to target registry
@@ -92,7 +92,7 @@ def push_image(image_name, source_registry, target_registry, tags):
         raise RuntimeError("argument tags is not iterable")
     d = DockerTasker()
     try:
-        final_tag = d.pull_image(image_name, source_registry)
+        final_tag = d.pull_image(image_id, source_registry)
         for tag in tags:
             d.tag_and_push_image(final_tag, tag, registry=target_registry)
     except Exception as ex:

@@ -111,7 +111,7 @@ def move_image_callback(task_id, response):
 
 
 def move_image(post_args, image_id, **kwargs):
-    post_args['image_name'] = image_id
+    post_args['image_id'] = image_id
     td = TaskData(json=json.dumps(post_args))
     td.save()
     owner = "testuser"  # XXX: hardcoded

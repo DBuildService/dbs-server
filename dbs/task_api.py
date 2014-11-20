@@ -75,11 +75,11 @@ class TaskApi(object):
     def find_dockerfiles_in_git(self):
         raise NotImplemented()
 
-    def push_docker_image(self, image_name, source_registry, target_registry, tags, callback=None, kwargs=None):
+    def push_docker_image(self, image_id, source_registry, target_registry, tags, callback=None, kwargs=None):
         """
         pull docker image from source registry, tag it with multiple tags and push it to target registry
 
-        :param image_name: image to pull
+        :param image_id: image to pull
         :param source_registry: registry to pull from
         :param target_registry: registry for pushing
         :param tags: list of tags for image tagging
@@ -89,7 +89,7 @@ class TaskApi(object):
                          callback(task_response, **kwargs)
         :return: task_id
         """
-        task_info = tasks.push_image.delay(image_name, source_registry, target_registry, tags)
+        task_info = tasks.push_image.delay(image_id, source_registry, target_registry, tags)
         task_id = task_info.task_id
         if callback:
             t = Thread(target=watch_task, args=(task_info, callback, kwargs))
