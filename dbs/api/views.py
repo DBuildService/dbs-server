@@ -9,13 +9,15 @@ from django.core.exceptions import (
 from django.db.models import Model, QuerySet
 from django.http import JsonResponse
 from django.views.generic import View
+from django.views.generic.edit import FormMixin
+from functools import partial
 
 from .core import (
-    build, rebuild, ErrorDuringRequest,
-    move_image, invalidate,
+    new_image_callback, move_image_callback,
 )
+from .forms import NewImageForm, MoveImageForm
 from ..task_api import TaskApi
-from ..models import Image, Task
+from ..models import Image, Task, TaskData
 
 
 logger = logging.getLogger(__name__)
@@ -50,8 +52,6 @@ class ModelJSONEncoder(json.JSONEncoder):
 class JsonView(View):
     """
     Overrides dispatch method to always return JsonResponse.
-    This may be (almost transparently) used together with different
-    class based views.
     """
     def dispatch(self, request, *args, **kwargs):
         try:
@@ -72,7 +72,7 @@ class JsonView(View):
             logger.error(force_text(e),
                 extra={'status_code': 400, 'request': request})
             response = JsonResponse({'error': 'Bad Request'})
-            response.status_code = 403
+            response.status_code = 400
         except SystemExit:
             # Allow sys.exit()
             raise
@@ -85,77 +85,37 @@ class JsonView(View):
 
 
 
-class ApiCall(View):
-    required_args = []
-    optional_args = []
-    func_response = None
-    error_response = None
-    func = None
+class FormJsonView(FormMixin, JsonView):
+    def post(self, request, *args, **kwargs):
+        """
+        Handles POST requests, instantiating a form instance with the passed
+        POST variables and then checked for validity.
+        """
+        #self.args   = args
+        #self.kwargs = kwargs
+        form_class  = self.get_form_class()
+        form        = self.get_form(form_class)
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
 
-    def __init__(self, **kwargs):
-        super(ApiCall, self).__init__(**kwargs)
-        self.args = None  # POST args
+    def put(self, *args, **kwargs):
+        return self.post(*args, **kwargs)
 
-    def process(self, **kwargs):
-        # if you call it just like self.func, python will treat it as method, not as function
-        try:
-            func = self.func.im_func  # py2
-        except AttributeError:
-            func = self.func.__func__  # py3
-        logger.debug("api callback: %s(%s, %s)", func.__name__, self.args, kwargs)
-        try:
-            self.func_response = func(self.args, **kwargs)
-        except ErrorDuringRequest as ex:
-            self.error_response = {'error': ex.message}
-        except Exception as ex:
-            logger.exception("Exception during processing request")
-            self.error_response = {'error': repr(ex)}
+    def form_valid(self, form):
+        return {'message': 'OK'}
 
-    def validate_rest_input(self):
-        # request.body -- requets sent as json
-        # request.POST -- sent as application/*form*
-        data_sources = []
-        try:
-            data_sources.append(json.loads(self.request.body))
-        except ValueError:
-            pass
-        data_sources.append(self.request.POST)
+    def form_invalid(self, form):
+        return {'errors': form.errors}
 
-        req_is_valid = False
-        for source in data_sources:
-            for req_arg in self.required_args:
-                try:
-                    source[req_arg]
-                except KeyError:
-                    req_is_valid = False
-                    break
-                req_is_valid = True
-            if req_is_valid:
-                break
-        if not req_is_valid and self.required_args:
-            raise RuntimeError("request is missing '%s'" % req_arg)
-        for arg in source:
-            if arg not in self.optional_args and arg not in self.required_args:
-                raise RuntimeError("Invalid argument '%s' supplied" % arg)
-        return source
-
-    def compose_response(self):
-        return self.func_response
-
-    def do_request(self, request, **kwargs):
-        logger.debug("request: %s", kwargs)
-        kwargs['request'] = request
-        self.process(**kwargs)
-        if self.error_response:
-            return JsonResponse(self.error_response)
-        return JsonResponse(self.compose_response(), safe=False)
-
-    def post(self, request, **kwargs):
-        self.args = self.validate_rest_input()
-        return self.do_request(request, **kwargs)
-
-    def get(self, request, **kwargs):
-        return self.do_request(request, **kwargs)
+    def get_form_kwargs(self):
+        kwargs = super(FormJsonView, self).get_form_kwargs()
+        if self.request.method in ('POST', 'PUT'):
+            kwargs.update({
+                'data': json.loads(self.request.body),
+            })
+        return kwargs
 
 
 
@@ -205,33 +165,79 @@ class ListTasksCall(JsonView):
 
 
 
-class NewImageCall(ApiCall):
-    required_args = ['git_url', 'tag']
-    optional_args = ['git_dockerfile_path', 'git_commit', 'parent_registry', 'target_registries', 'repos']
-    func = build
+class NewImageCall(FormJsonView):
+    form_class  = NewImageForm
 
-    def compose_response(self):
-        return {'task_id': self.func_response}
+    def form_valid(self, form):
+        """ initiate a new build """
+        cleaned_data = form.cleaned_data
+        owner = 'testuser'  # XXX: hardcoded
+        logger.debug('cleaned_data = %s', cleaned_data)
+        local_tag = '%s/%s' % (owner, cleaned_data['tag'])
+        td = TaskData(json=json.dumps(cleaned_data))
+        td.save()
+        t = Task(builddev_id='buildroot-fedora', status=Task.STATUS_PENDING,
+                 type=Task.TYPE_BUILD, owner=owner, task_data=td)
+        t.save()
+        cleaned_data.update({'build_image': 'buildroot-fedora', 'local_tag': local_tag,
+                     'callback': partial(new_image_callback, t.id)})
+        task_id = builder_api.build_docker_image(**cleaned_data)
+        t.celery_id = task_id
+        t.save()
+        return {'task_id': t.id}
 
 
-class MoveImageCall(NewImageCall):
-    required_args = ['source_registry', 'target_registry', 'tags']
-    optional_args = []
-    func = move_image
+
+class MoveImageCall(FormJsonView):
+    form_class  = MoveImageForm
+
+    def form_valid(self, form):
+        data = form.cleaned_data
+        data['image_id'] = self.kwargs['image_id']
+        td = TaskData(json=json.dumps(data))
+        td.save()
+        owner = 'testuser'  # XXX: hardcoded
+        t = Task(type=Task.TYPE_MOVE, owner=owner, task_data=td)
+        t.save()
+        data['callback'] = partial(move_image_callback, t.id)
+        task_id = builder_api.push_docker_image(**data)
+        t.celery_id = task_id
+        t.save()
+        return {'task_id': t.id}
 
 
-class RebuildImageCall(NewImageCall):
+
+class RebuildImageCall(JsonView):
     """ rebuild provided image; use same response as new_image """
-    required_args = []
-    optional_args = ['git_dockerfile_path', 'git_commit', 'parent_registry',
-                     'target_registries', 'repos', 'git_url', 'tag']
-    func = rebuild
+    def post(self, request, image_id):
+        post_args   = json.loads(self.request.body)
+        try:
+            data = json.loads(
+                Image.objects.get(hash=image_id).task.task_data.json
+            )
+        except (ObjectDoesNotExist, AttributeError) as e:
+            logger.error(repr(e))
+            raise ErrorDuringRequest('Image does not exist or was not built from task.')
+        else:
+            if post_args:
+                data.update(post_args)
+        data['image_id'] = image_id
+        td = TaskData(json=json.dumps(data))
+        td.save()
+        owner = 'testuser'  # XXX: hardcoded
+        t = Task(type=Task.TYPE_MOVE, owner=owner, task_data=td)
+        t.save()
+        data['callback'] = partial(move_image_callback, t.id)
+        task_id = builder_api.push_docker_image(**data)
+        t.celery_id = task_id
+        t.save()
+        return {'task_id': t.id}
 
 
-class InvalidateImageCall(ApiCall):
-    required_args = []
-    optional_args = []
-    func = invalidate
 
-    def compose_response(self):
-        return {'message': "Invalidated %d images." % self.func_response}
+class InvalidateImageCall(JsonView):
+    def post(self, request, image_id):
+        count = Image.objects.invalidate(image_id)
+        return {'message': 'Invalidated {} images.'.format(count)}
+
+

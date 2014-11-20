@@ -12,3 +12,9 @@ class NewImageForm(forms.Form):
     target_registries   = forms.MultipleChoiceField(required=False)
     repos               = forms.MultipleChoiceField(required=False)
 
+
+class MoveImageForm(forms.Form):
+    source_registry     = forms.CharField()
+    target_registry     = forms.CharField()
+    tags                = forms.MultipleChoiceField()
+
