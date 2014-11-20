@@ -2,15 +2,15 @@ from __future__ import absolute_import, division, generators, nested_scopes, pri
 
 import json
 import logging
-from datetime import datetime
-from functools import partial
 import socket
+from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
+from functools import partial
 
-from dbs.models import Task, TaskData, Dockerfile, Image
-from dbs.task_api import TaskApi
-from dbs.utils import chain_dict_get
+from ..models import Task, TaskData, Dockerfile, Image
+from ..task_api import TaskApi
+from ..utils import chain_dict_get
 
 
 logger = logging.getLogger(__name__)

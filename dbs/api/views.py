@@ -6,8 +6,11 @@ import logging
 from django.http import JsonResponse
 from django.views.generic import View
 
-from .core import build, rebuild, ErrorDuringRequest
-from dbs.api.core import move_image, invalidate, task_status, image_info, list_images, image_status, image_deps, list_tasks
+from .core import (
+    build, rebuild, ErrorDuringRequest,
+    move_image, invalidate, task_status, image_info,
+    list_images, image_status, image_deps, list_tasks
+)
 from ..task_api import TaskApi
 
 
