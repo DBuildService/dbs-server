@@ -2,7 +2,6 @@ from __future__ import absolute_import, division, generators, nested_scopes, pri
 
 import json
 import logging
-import socket
 from datetime import datetime
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import get_object_or_404
@@ -88,7 +87,9 @@ def build(post_args, **kwargs):
 
 def rebuild(post_args, image_id, **kwargs):
     try:
-        data = Image.objects.taskdata_for_imageid(image_id)
+        data = json.loads(
+            Image.objects.get(hash=image_id).task.task_data.json
+        )
     except (ObjectDoesNotExist, AttributeError) as ex:
         logger.error("%s", repr(ex))
         raise ErrorDuringRequest("Image does not exist or was not built from task.")
@@ -129,86 +130,3 @@ def invalidate(post_args, image_id, **kwargs):
     return response
 
 
-def task_status(args, task_id, request, **kwargs):
-    task = get_object_or_404(Task, id=task_id)
-    response = {
-        "task_id": task_id,
-        "status": task.get_status_display(),
-        "type": task.get_type_display(),
-        "owner": task.owner,
-        "started": str(task.date_started),
-        "finished": str(task.date_finished),
-        "builddev-id": task.builddev_id,
-    }
-
-    if hasattr(task, 'image'):
-        response['image_id'] = task.image.hash
-        task_data = json.loads(task.task_data.json)
-        # domain = request.get_host()
-        domain = socket.gethostbyname(request.META['SERVER_NAME'])
-        response['message'] = "You can pull your image with command: 'docker pull %s:5000/%s'" % \
-                              (domain, task_data['tag'])
-    return response
-
-
-def image_info(args, image_id, **kwargs):
-    img = get_object_or_404(Image, hash=image_id)
-
-    #rpms = []
-    #for rpm in img.rpms.all():
-    #    rpms.append({"nvr": rpm.nvr,
-    #                 "component": rpm.component,
-    #                 })
-
-    #registries = []
-    #for reg in img.registries.all():
-    #    registries.append({"url": reg.url})
-
-    response = {
-        "hash": img.hash,
-        "status": img.get_status_display(),
-        "is_invalidated": img.is_invalidated,
-        "rpms": img.ordered_rpms_list(),
-        "tags": img.tags,
-        # "registries": copy.copy(registries),
-        "parent": getattr(img.parent, 'hash', None)
-    }
-    if img.task:
-        response['built_on'] = str(img.task.date_finished)
-
-    return response
-
-
-def list_images(args, **kwargs):
-    response = []
-
-    for img in Image.objects.all():
-        response.append(image_info(args, img.hash))
-
-    return response
-
-
-def list_tasks(args, request, **kwargs):
-    response = []
-
-    for task in Task.objects.all():
-        response.append(task_status(args, task.id, request))
-
-    return response
-
-
-def image_status(args, image_id, **kwargs):
-    img = get_object_or_404(Image, hash=image_id)
-    response = {"image_id": image_id,
-                "status": img.get_status_display()}
-    return response
-
-
-def image_deps(args, image_id, **kwargs):
-    deps = []
-    response = {"image_id": image_id,
-                "deps": deps}
-    for child in Image.objects.children(image_id):
-        deps.append(image_deps(args, child.hash))
-
-    return response

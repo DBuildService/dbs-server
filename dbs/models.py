@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, generators, nested_scopes, pri
 import json
 import re
 import logging
+import socket
 
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
@@ -51,7 +52,7 @@ class Task(models.Model):
     log             = models.TextField(blank=True, null=True)
 
     class Meta:
-        ordering = ["-date_finished"]
+        ordering = ['-date_finished']
 
     def __unicode__(self):
         return "%d [%s]" % (self.id, self.get_status())
@@ -62,6 +63,25 @@ class Task(models.Model):
     def get_status(self):
         return self._STATUS_NAMES[self.status]
 
+    def __json__(self):
+        response = {
+            "task_id": self.id,
+            "status": self.get_status_display(),
+            "type": self.get_type_display(),
+            "owner": self.owner,
+            "started": str(self.date_started),
+            "finished": str(self.date_finished),
+            "builddev-id": self.builddev_id,
+        }
+
+        if hasattr(self, 'image'):
+            response['image_id'] = self.image.hash
+            task_data = json.loads(self.task_data.json)
+            domain = socket.gethostname()
+            response['message'] = 'You can pull your image with command: \'docker pull {}:5000/{}\''.format(
+                domain, task_data['tag']
+            )
+        return response
 
 
 
@@ -73,14 +93,14 @@ class Package(models.Model):
 
 class RpmQuerySet(models.QuerySet):
     def get_or_create_from_nvr(self, nvr):
-        re_nvr = re.match("(.*)-(.*)-(.*)", nvr)
+        re_nvr = re.match('(.*)-(.*)-(.*)', nvr)
         if re_nvr:
             name, version, release = re_nvr.groups()
             p, _ = Package.objects.get_or_create(name=name)
             rpm, _ = Rpm.objects.get_or_create(package=p, nvr=nvr)
             return rpm
         else:
-            logger.error("'%s' is not an N-V-R", nvr)
+            logger.error('"%s" is not an N-V-R', nvr)
 
 
 
@@ -92,7 +112,7 @@ class Rpm(models.Model):
     objects = RpmQuerySet.as_manager()
 
     def __unicode__(self):
-        return "%s: %s" % (self.package, self.nvr)
+        return '%s: %s' % (self.package, self.nvr)
 
 
 
@@ -115,15 +135,10 @@ class YumRepo(models.Model):
     url = models.URLField()
 
 
+
 class ImageQuerySet(models.QuerySet):
-    def taskdata_for_imageid(self, image_id):
-        return json.loads(self.get(hash=image_id).task.task_data.json)
-
-    def children(self, image_id):
-        return self.filter(parent=image_id)
-
     def children_as_list(self, image_id):
-        return self.children(image_id).values_list('hash', flat=True)
+        return self.filter(parent=image_id).values_list('hash', flat=True)
 
     def invalidate(self, image_id):
         """
@@ -169,7 +184,7 @@ class Image(models.Model):
     objects = ImageQuerySet.as_manager()
 
     def __unicode__(self):
-        return u"%s: %s" % (self.hash[:12], self.get_status())
+        return u'%s: %s' % (self.hash[:12], self.get_status())
 
     def get_status(self):
         return self._STATUS_NAMES[self.status]
@@ -195,10 +210,10 @@ class Image(models.Model):
 
     @property
     def children(self):
-        return Image.objects.children(self)
+        return Image.objects.filter(parent=self)
 
     def ordered_rpms_list(self):
-        return list(Rpm.objects.filter(part_of__image=self).values_list('nvr', flat=True).order_by("nvr"))
+        return list(Rpm.objects.filter(part_of__image=self).values_list('nvr', flat=True).order_by('nvr'))
 
     @property
     def rpms_count(self):
@@ -215,6 +230,20 @@ class Image(models.Model):
                 content, _ = Content.objects.get_or_create(object_id=rpm.id, content_type=rpm_ct)
                 self.content.add(content)
 
+    def __json__(self):
+        response = {
+            'hash':             self.hash,
+            'status':           self.get_status_display(),
+            'is_invalidated':   self.is_invalidated,
+            'rpms':             self.ordered_rpms_list(),
+            'tags':             self.tags,
+            # 'registries': copy.copy(registries),
+            'parent':           getattr(self.parent, 'hash', None)
+        }
+        if self.task:
+            response['built_on'] = str(self.task.date_finished)
+        return response
+
 
 
 class TagQuerySet(models.QuerySet):
@@ -223,6 +252,7 @@ class TagQuerySet(models.QuerySet):
 
     def for_image_as_list(self, image):
         return list(self.for_image(image).values_list('name', flat=True))
+
 
 
 # TODO: do relations with this
@@ -234,7 +264,7 @@ class Tag(models.Model):
 
 
 class ImageRegistryRelation(models.Model):
-    tag = models.ForeignKey(Tag, related_name="registry_bindings")
+    tag = models.ForeignKey(Tag, related_name='registry_bindings')
     image = models.ForeignKey(Image)
     registry = models.ForeignKey(Registry, blank=True, null=True)
 
