@@ -8,16 +8,19 @@ import sys
 if __name__ == "__main__":
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", "dbs.settings")
 
-    #if os.getuid() == 0 and 'collectstatic' not in sys.argv:
-    #    from django.conf import settings
-    #    import pwd
-    #    user = pwd.getpwnam(getattr(settings, 'USERNAME', 'dbs'))
-    #    os.setgid(user.pw_gid)
-    #    os.setuid(user.pw_uid)
-    #    os.environ['USER']  = user.pw_name
-    #    os.environ['HOME']  = user.pw_dir
-    #    os.environ['SHELL'] = user.pw_shell
-    #    os.chdir(os.environ['HOME'])
+    if os.getuid() == 0 and 'collectstatic' not in sys.argv:
+        from django.conf import settings
+        import pwd, grp
+        user = pwd.getpwnam(getattr(settings, 'USERNAME', 'dbs'))
+        groups = [g.gr_gid for g in grp.getgrall() if user.pw_name in g.gr_mem]
+        os.setgid(user.pw_gid)
+        os.setgroups(groups)
+        os.setuid(user.pw_uid)
+        os.environ['USER']      = user.pw_name
+        os.environ['LOGNAME']   = user.pw_name
+        os.environ['HOME']      = user.pw_dir
+        os.environ['SHELL']     = user.pw_shell
+        os.chdir(os.environ['HOME'])
 
     from django.core.management import execute_from_command_line
 
