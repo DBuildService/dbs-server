@@ -1,8 +1,13 @@
 from __future__ import absolute_import, division, generators, nested_scopes, print_function, unicode_literals, with_statement
 
+import logging
+
 from celery import shared_task
-from dock.core import DockerBuilder, DockerTasker
-from dock.outer import PrivilegedDockerBuilder
+from dock.core import DockerTasker
+from dock.api import build_image_in_privileged_container, build_image_using_hosts_docker
+
+
+logger = logging.getLogger(__name__)
 
 
 @shared_task
@@ -27,21 +32,24 @@ def build_image_hostdocker(
                           in local docker registry
     :return: dict with data from docker inspect
     """
-    db = DockerBuilder(git_url, local_tag, git_dockerfile_path, git_commit, repos)
-    if parent_registry:
-        db.pull_base_image(parent_registry)
-
-    db.build(build_image)
+    logger.info("build image using hostdocker method")
+    target_registries = target_registries or []
+    push_buildroot_to = None
     if store_results:
-        db.push_buildroot('localhost:5000')
-        db.push_built_image('localhost:5000')
-    if target_registries:
-        for target_registry in target_registries:
-            db.push_built_image(target_registry, tag)
-
-    inspect_data = db.inspect_built_image()  # dict with lots of data, see man docker-inspect
-    # TODO: postbuild_data = run_postbuild_plugins(d, private_tag)
-    return inspect_data
+        target_registries.append('172.17.42.1:5000')
+        push_buildroot_to = "172.17.42.1:5000"
+    results = build_image_using_hosts_docker(
+        build_image,
+        git_url=git_url,
+        image=local_tag,
+        git_dockerfile_path=git_dockerfile_path,
+        git_commit=git_commit,
+        parent_registry=parent_registry,
+        target_registries=target_registries,
+        repos=repos,
+        push_buildroot_to=push_buildroot_to,
+    )
+    return results
 
 @shared_task
 def build_image(build_image, git_url, local_tag, git_dockerfile_path=None,
@@ -63,18 +71,24 @@ def build_image(build_image, git_url, local_tag, git_dockerfile_path=None,
                           in local docker registry
     :return: dict with data from docker inspect
     """
-    db = PrivilegedDockerBuilder(build_image, {
-        "git_url": git_url,
-        "local_tag": local_tag,
-        "git_dockerfile_path": git_dockerfile_path,
-        "git_commit": git_commit,
-        "parent_registry": parent_registry,
-        "target_registries": target_registries,
-        "tag": tag,
-        "repos": repos,
-        "store_results": store_results,
-    })
-    return db.build()
+    logger.info("build image in privileged container")
+    target_registries = target_registries or []
+    push_buildroot_to = None
+    if store_results:
+        target_registries.append('172.17.42.1:5000')
+        push_buildroot_to = "172.17.42.1:5000"
+    results = build_image_in_privileged_container(
+        build_image,
+        git_url=git_url,
+        image=local_tag,
+        git_dockerfile_path=git_dockerfile_path,
+        git_commit=git_commit,
+        parent_registry=parent_registry,
+        target_registries=target_registries,
+        repos=repos,
+        push_buildroot_to=push_buildroot_to,
+    )
+    return results
 
 
 @shared_task
@@ -94,7 +108,7 @@ def push_image(image_id, source_registry, target_registry, tags):
     try:
         final_tag = d.pull_image(image_id, source_registry)
         for tag in tags:
-            d.tag_and_push_image(final_tag, tag, registry=target_registry)
+            d.tag_and_push_image(final_tag, tag, reg_uri=target_registry)
     except Exception as ex:
         return {"error": repr(ex.message)}
     else:

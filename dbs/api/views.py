@@ -173,7 +173,7 @@ class NewImageCall(FormJsonView):
         cleaned_data = form.cleaned_data
         owner = 'testuser'  # XXX: hardcoded
         logger.debug('cleaned_data = %s', cleaned_data)
-        local_tag = '%s/%s' % (owner, cleaned_data['tag'])
+        local_tag = '%s.%s' % (owner, cleaned_data['tag'])
         td = TaskData(json=json.dumps(cleaned_data))
         td.save()
         t = Task(builddev_id='buildroot-fedora', status=Task.STATUS_PENDING,

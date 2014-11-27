@@ -10,24 +10,22 @@ from ..utils import chain_dict_get
 logger = logging.getLogger(__name__)
 
 
-def new_image_callback(task_id, response_tuple):
-    try:
-        response_hash, df, build_log = response_tuple
-    except (TypeError, ValueError):
-        response_hash, df, build_log = None, None, None
+def new_image_callback(task_id, build_results):
+    build_logs = getattr(build_results, 'build_logs', None)
     t = Task.objects.get(id=task_id)
     t.date_finished = datetime.now()
-    if build_log:
-        t.log = '\n'.join(build_log)
-    if response_hash:
-        image_id = chain_dict_get(response_hash, ['built_img_info', 'Id'])
+    if build_logs:
+        t.log = '\n'.join(build_logs)
+    if build_results:
+        image_id = getattr(build_results, "built_img_info", {}).get("Id", None)
         logger.debug("image_id = %s", image_id)
-        parent_image_id = chain_dict_get(response_hash, ['base_img_info', 'Id'])
+        parent_image_id = getattr(build_results, "base_img_info", {}).get("Id", None)
         logger.debug("parent_image_id = %s", parent_image_id)
-        image_tags = chain_dict_get(response_hash, ['built_img_info', 'RepoTags'])
+        image_tags = getattr(build_results, "built_img_info", {}).get("RepoTags", None)
         logger.debug("image_tags = %s", image_tags)
-        parent_tags = chain_dict_get(response_hash, ['base_img_info', 'RepoTags'])
+        parent_tags = getattr(build_results, "base_img_info", {}).get("RepoTags", None)
         logger.debug("parent_tags = %s", parent_tags)
+        df = getattr(build_results, "dockerfile", None)
         if image_id and parent_image_id:
             parent_image = Image.create(parent_image_id, Image.STATUS_BASE, tags=parent_tags)
             image = Image.create(image_id, Image.STATUS_BUILD, tags=image_tags,
@@ -37,8 +35,8 @@ def new_image_callback(task_id, response_tuple):
                 df_model.save()
                 image.dockerfile = df_model
                 image.save()
-            rpm_list = chain_dict_get(response_hash, ['built_img_plugins_output', 'all_packages'])
-            base_rpm_list = chain_dict_get(response_hash, ['base_plugins_output', 'all_packages'])
+            rpm_list = getattr(build_results, "built_img_plugins_output", {}).get("all_packages", None)
+            base_rpm_list = getattr(build_results, "base_plugins_output", {}).get("all_packages", None)
             if rpm_list:
                 image.add_rpms_list(rpm_list)
             if base_rpm_list:
