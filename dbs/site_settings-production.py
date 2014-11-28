@@ -29,7 +29,7 @@ ADMINS = (
     ('Jakub Dorňák',   'jdornak+dbs@redhat.com'),
 )
 MANAGERS = ADMINS
-SERVER_EMAIL = 'admin@dbs.org'
+SERVER_EMAIL = 'DBS <dbs@{}>'.format(os.uname()[1])
 
 # Database
 # https://docs.djangoproject.com/en/1.7/ref/settings/#databases
